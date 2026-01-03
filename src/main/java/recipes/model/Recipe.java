@@ -7,6 +7,8 @@ public class Recipe {
     private String difficulty; // EASY / MEDIUM / HARD
     private int totalDurationMinutes;
     private Integer categoryId;
+    private String photoPath;
+
 
     public Recipe(Integer id, String name, String description, String difficulty, int totalDurationMinutes) {
         this.id = id;
@@ -29,6 +31,9 @@ public class Recipe {
 
     public void setId(Integer id) { this.id = id; }
     public void setCategoryId(Integer categoryId) { this.categoryId = categoryId; }
+
+    public String getPhotoPath() { return photoPath; }
+    public void setPhotoPath(String photoPath) { this.photoPath = photoPath; }
 
     @Override
     public String toString() {

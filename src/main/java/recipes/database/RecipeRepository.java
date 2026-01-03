@@ -9,8 +9,8 @@ import java.util.List;
 public class RecipeRepository {
 
     public int save(Recipe recipe) throws Exception {
-        String sql = "INSERT INTO recipe (name, description, difficulty, total_duration_minutes, category_id) " +
-                "VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO recipe (name, description, difficulty, total_duration_minutes, category_id, photo_path) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -19,7 +19,8 @@ public class RecipeRepository {
             ps.setString(2, recipe.getDescription());
             ps.setString(3, recipe.getDifficulty());
             ps.setInt(4, recipe.getTotalDurationMinutes());
-            ps.setObject(5, recipe.getCategoryId()); // μπορεί να είναι null
+            ps.setObject(5, recipe.getCategoryId());     // μπορεί να είναι null
+            ps.setString(6, recipe.getPhotoPath());      // μπορεί να είναι null
 
             ps.executeUpdate();
 
@@ -36,7 +37,7 @@ public class RecipeRepository {
     }
 
     public List<Recipe> findAll() throws Exception {
-        String sql = "SELECT id, name, description, difficulty, total_duration_minutes, category_id " +
+        String sql = "SELECT id, name, description, difficulty, total_duration_minutes, category_id, photo_path " +
                 "FROM recipe ORDER BY id DESC";
 
         List<Recipe> result = new ArrayList<>();
@@ -54,8 +55,8 @@ public class RecipeRepository {
                         rs.getInt("total_duration_minutes")
                 );
 
-                // category_id μπορεί να είναι NULL
-                r.setCategoryId((Integer) rs.getObject("category_id"));
+                r.setCategoryId((Integer) rs.getObject("category_id")); // μπορεί να είναι NULL
+                r.setPhotoPath(rs.getString("photo_path"));             // μπορεί να είναι NULL
 
                 result.add(r);
             }
@@ -65,7 +66,7 @@ public class RecipeRepository {
     }
 
     public Recipe findById(int id) throws Exception {
-        String sql = "SELECT id, name, description, difficulty, total_duration_minutes, category_id " +
+        String sql = "SELECT id, name, description, difficulty, total_duration_minutes, category_id, photo_path " +
                 "FROM recipe WHERE id = ?";
 
         try (Connection conn = Database.getConnection();
@@ -84,6 +85,8 @@ public class RecipeRepository {
                     );
 
                     r.setCategoryId((Integer) rs.getObject("category_id"));
+                    r.setPhotoPath(rs.getString("photo_path"));
+
                     return r;
                 }
             }
@@ -134,7 +137,7 @@ public class RecipeRepository {
         }
 
         String sql = "UPDATE recipe " +
-                "SET name = ?, description = ?, difficulty = ?, total_duration_minutes = ?, category_id = ? " +
+                "SET name = ?, description = ?, difficulty = ?, total_duration_minutes = ?, category_id = ?, photo_path = ? " +
                 "WHERE id = ?";
 
         try (Connection conn = Database.getConnection();
@@ -144,8 +147,9 @@ public class RecipeRepository {
             ps.setString(2, recipe.getDescription());
             ps.setString(3, recipe.getDifficulty());
             ps.setInt(4, recipe.getTotalDurationMinutes());
-            ps.setObject(5, recipe.getCategoryId()); // μπορεί να είναι null
-            ps.setInt(6, recipe.getId());
+            ps.setObject(5, recipe.getCategoryId());   // μπορεί να είναι null
+            ps.setString(6, recipe.getPhotoPath());    // μπορεί να είναι null
+            ps.setInt(7, recipe.getId());
 
             int affected = ps.executeUpdate();
             return affected > 0;

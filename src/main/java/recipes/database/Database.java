@@ -37,12 +37,20 @@ public class Database {
                 }
             }
 
-            // ✅ Migration: προσθέτουμε category_id στο recipe αν δεν υπάρχει ήδη
+            // Migration: category_id
             try {
                 stmt.execute("ALTER TABLE recipe ADD COLUMN category_id INTEGER REFERENCES category(id)");
             } catch (SQLException ignored) {
                 // column already exists
             }
+            // Migration: recipe photo
+            try { stmt.execute("ALTER TABLE recipe ADD COLUMN photo_path TEXT"); }
+            catch (SQLException ignored) {}
+
+            // Migration: step photo (μία φωτο ανά βήμα)
+            try { stmt.execute("ALTER TABLE step ADD COLUMN photo_path TEXT"); }
+            catch (SQLException ignored) {}
+
         }
     }
 

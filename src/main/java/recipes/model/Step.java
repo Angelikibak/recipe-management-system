@@ -7,6 +7,10 @@ public class Step {
     private String title;
     private String description;
     private int durationMinutes;
+    private String photoPath;
+
+
+
 
     public Step(Integer id, int recipeId, int sequenceNumber, String title, String description, int durationMinutes) {
         this.id = id;
@@ -16,6 +20,9 @@ public class Step {
         this.description = description;
         this.durationMinutes = durationMinutes;
     }
+
+    public String getPhotoPath() { return photoPath; }
+    public void setPhotoPath(String photoPath) { this.photoPath = photoPath; }
 
     public Step(int recipeId, int sequenceNumber, String title, String description, int durationMinutes) {
         this(null, recipeId, sequenceNumber, title, description, durationMinutes);

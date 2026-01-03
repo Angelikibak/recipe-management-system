@@ -26,12 +26,16 @@ public class RecipeManagementFrame extends JFrame {
     private final JComboBox<String> difficultyBox = new JComboBox<>(new String[]{"EASY", "MEDIUM", "HARD"});
     private final JSpinner durationSpinner = new JSpinner(new SpinnerNumberModel(20, 1, 1000, 1));
 
+    // ✅ Photo UI state
+    private final JLabel recipePhotoPreview = new JLabel("No photo");
+    private String selectedRecipePhotoPath = null;
+
     private Recipe selectedRecipe = null;
     private JButton manageStepsBtn;
 
     public RecipeManagementFrame() {
         setTitle("Recipe Management System");
-        setSize(900, 500);
+        setSize(900, 520);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -90,32 +94,62 @@ public class RecipeManagementFrame extends JFrame {
         c.gridx = 0;
         c.gridy = 0;
 
+        // Name
         form.add(new JLabel("Name"), c);
         c.gridx = 1;
         form.add(nameField, c);
 
+        // Category
         c.gridx = 0;
         c.gridy++;
         form.add(new JLabel("Category"), c);
         c.gridx = 1;
         form.add(categoryBox, c);
 
+        // Difficulty
         c.gridx = 0;
         c.gridy++;
         form.add(new JLabel("Difficulty"), c);
         c.gridx = 1;
         form.add(difficultyBox, c);
 
+        // Duration
         c.gridx = 0;
         c.gridy++;
         form.add(new JLabel("Total Duration (min)"), c);
         c.gridx = 1;
         form.add(durationSpinner, c);
 
+        // Photo row
         c.gridx = 0;
         c.gridy++;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.anchor = GridBagConstraints.NORTHWEST;
+        form.add(new JLabel("Photo"), c);
+
+        JPanel photoPanel = new JPanel(new BorderLayout(8, 8));
+
+        JButton choosePhotoBtn = new JButton("Choose Photo...");
+        choosePhotoBtn.addActionListener(e -> chooseRecipePhoto());
+
+        recipePhotoPreview.setPreferredSize(new Dimension(220, 150));
+        recipePhotoPreview.setHorizontalAlignment(SwingConstants.CENTER);
+        recipePhotoPreview.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+
+        photoPanel.add(choosePhotoBtn, BorderLayout.NORTH);
+        photoPanel.add(recipePhotoPreview, BorderLayout.CENTER);
+
+        c.gridx = 1;
+        c.fill = GridBagConstraints.BOTH;
+        form.add(photoPanel, c);
+
+        // Description
+        c.gridx = 0;
+        c.gridy++;
+        c.fill = GridBagConstraints.HORIZONTAL;
         c.anchor = GridBagConstraints.NORTHWEST;
         form.add(new JLabel("Description"), c);
+
         c.gridx = 1;
         c.fill = GridBagConstraints.BOTH;
 
@@ -207,10 +241,11 @@ public class RecipeManagementFrame extends JFrame {
                 break;
             }
         }
+        if (!found) categoryBox.setSelectedIndex(0);
 
-        if (!found) {
-            categoryBox.setSelectedIndex(0); // — Select —
-        }
+        // ✅ Photo
+        selectedRecipePhotoPath = r.getPhotoPath();
+        setPreviewImage(recipePhotoPreview, selectedRecipePhotoPath);
     }
 
     private void clearForm() {
@@ -218,7 +253,10 @@ public class RecipeManagementFrame extends JFrame {
         descriptionArea.setText("");
         difficultyBox.setSelectedItem("EASY");
         durationSpinner.setValue(20);
-        categoryBox.setSelectedIndex(0); // — Select —
+        categoryBox.setSelectedIndex(0);
+
+        selectedRecipePhotoPath = null;
+        setPreviewImage(recipePhotoPreview, null);
     }
 
     private void selectRecipeInListById(int id) {
@@ -254,12 +292,14 @@ public class RecipeManagementFrame extends JFrame {
             if (selectedRecipe == null) {
                 Recipe newRecipe = new Recipe(name, desc, diff, duration);
                 newRecipe.setCategoryId(categoryId);
+                newRecipe.setPhotoPath(selectedRecipePhotoPath);
 
                 recipeRepo.save(newRecipe);
                 idToSelect = newRecipe.getId().intValue();
             } else {
                 Recipe updated = new Recipe(selectedRecipe.getId(), name, desc, diff, duration);
                 updated.setCategoryId(categoryId);
+                updated.setPhotoPath(selectedRecipePhotoPath);
 
                 recipeRepo.update(updated);
                 idToSelect = selectedRecipe.getId();
@@ -337,6 +377,31 @@ public class RecipeManagementFrame extends JFrame {
         } catch (Exception ex) {
             showError(ex);
         }
+    }
+
+    private void chooseRecipePhoto() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Select recipe photo");
+
+        int result = chooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            String path = chooser.getSelectedFile().getAbsolutePath();
+            selectedRecipePhotoPath = path;
+            setPreviewImage(recipePhotoPreview, path);
+        }
+    }
+
+    private void setPreviewImage(JLabel label, String path) {
+        if (path == null || path.isBlank()) {
+            label.setIcon(null);
+            label.setText("No photo");
+            return;
+        }
+
+        ImageIcon icon = new ImageIcon(path);
+        Image img = icon.getImage().getScaledInstance(220, 150, Image.SCALE_SMOOTH);
+        label.setText("");
+        label.setIcon(new ImageIcon(img));
     }
 
     private void showError(Exception ex) {
