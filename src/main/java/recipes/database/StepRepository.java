@@ -60,4 +60,33 @@ public class StepRepository {
         }
         return result;
     }
+
+    public void update(Step step) throws Exception {
+        String sql = "UPDATE step SET sequence_number = ?, title = ?, description = ?, duration_minutes = ? WHERE id = ?";
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, step.getSequenceNumber());
+            ps.setString(2, step.getTitle());
+            ps.setString(3, step.getDescription());
+            ps.setInt(4, step.getDurationMinutes());
+            ps.setInt(5, step.getId());
+
+            ps.executeUpdate();
+        }
+    }
+
+    public void deleteById(int stepId) throws Exception {
+        String sql = "DELETE FROM step WHERE id = ?";
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, stepId);
+            ps.executeUpdate();
+        }
+    }
+
+
 }
