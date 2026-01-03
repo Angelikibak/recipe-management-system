@@ -1,6 +1,8 @@
 package recipes.ui;
 
+import recipes.database.CategoryRepository;
 import recipes.database.RecipeRepository;
+import recipes.model.Category;
 import recipes.model.ExecutionSession;
 import recipes.model.Recipe;
 import recipes.service.ExecutionService;
@@ -13,17 +15,18 @@ public class RecipeManagementFrame extends JFrame {
 
     private final RecipeRepository recipeRepo = new RecipeRepository();
     private final ExecutionService executionService = new ExecutionService();
+    private final CategoryRepository categoryRepo = new CategoryRepository();
 
     private final DefaultListModel<Recipe> listModel = new DefaultListModel<>();
     private final JList<Recipe> recipeList = new JList<>(listModel);
 
     private final JTextField nameField = new JTextField();
     private final JTextArea descriptionArea = new JTextArea(5, 20);
+    private final JComboBox<Category> categoryBox = new JComboBox<>();
     private final JComboBox<String> difficultyBox = new JComboBox<>(new String[]{"EASY", "MEDIUM", "HARD"});
     private final JSpinner durationSpinner = new JSpinner(new SpinnerNumberModel(20, 1, 1000, 1));
 
     private Recipe selectedRecipe = null;
-
     private JButton manageStepsBtn;
 
     public RecipeManagementFrame() {
@@ -33,6 +36,9 @@ public class RecipeManagementFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         buildUI();
+
+        // ✅ Πρώτα categories, μετά recipes (για να μπορεί fillForm να κάνει select category)
+        loadCategories();
         loadRecipes();
     }
 
@@ -68,7 +74,10 @@ public class RecipeManagementFrame extends JFrame {
         left.add(new JScrollPane(recipeList), BorderLayout.CENTER);
 
         JButton refreshBtn = new JButton("Refresh");
-        refreshBtn.addActionListener(e -> loadRecipes());
+        refreshBtn.addActionListener(e -> {
+            loadCategories();
+            loadRecipes();
+        });
         left.add(refreshBtn, BorderLayout.SOUTH);
 
         root.add(left, BorderLayout.WEST);
@@ -85,21 +94,31 @@ public class RecipeManagementFrame extends JFrame {
         c.gridx = 1;
         form.add(nameField, c);
 
-        c.gridx = 0; c.gridy++;
+        c.gridx = 0;
+        c.gridy++;
+        form.add(new JLabel("Category"), c);
+        c.gridx = 1;
+        form.add(categoryBox, c);
+
+        c.gridx = 0;
+        c.gridy++;
         form.add(new JLabel("Difficulty"), c);
         c.gridx = 1;
         form.add(difficultyBox, c);
 
-        c.gridx = 0; c.gridy++;
+        c.gridx = 0;
+        c.gridy++;
         form.add(new JLabel("Total Duration (min)"), c);
         c.gridx = 1;
         form.add(durationSpinner, c);
 
-        c.gridx = 0; c.gridy++;
+        c.gridx = 0;
+        c.gridy++;
         c.anchor = GridBagConstraints.NORTHWEST;
         form.add(new JLabel("Description"), c);
         c.gridx = 1;
         c.fill = GridBagConstraints.BOTH;
+
         descriptionArea.setLineWrap(true);
         descriptionArea.setWrapStyleWord(true);
         form.add(new JScrollPane(descriptionArea), c);
@@ -142,12 +161,26 @@ public class RecipeManagementFrame extends JFrame {
         root.add(right, BorderLayout.CENTER);
     }
 
+    private void loadCategories() {
+        try {
+            categoryBox.removeAllItems();
+            categoryBox.addItem(new Category(null, "— Select —"));
+
+            for (Category cat : categoryRepo.findAll()) {
+                categoryBox.addItem(cat);
+            }
+        } catch (Exception ex) {
+            showError(ex);
+        }
+    }
+
     private void loadRecipes() {
         try {
             listModel.clear();
             List<Recipe> recipes = recipeRepo.findAll();
-            for (Recipe r : recipes) listModel.addElement(r);
-
+            for (Recipe r : recipes) {
+                listModel.addElement(r);
+            }
             updateStepsButtonState();
         } catch (Exception ex) {
             showError(ex);
@@ -156,10 +189,28 @@ public class RecipeManagementFrame extends JFrame {
 
     private void fillForm(Recipe r) {
         if (r == null) return;
+
         nameField.setText(r.getName());
         descriptionArea.setText(r.getDescription() == null ? "" : r.getDescription());
         difficultyBox.setSelectedItem(r.getDifficulty());
         durationSpinner.setValue(r.getTotalDurationMinutes());
+
+        // ✅ Select category by id
+        Integer catId = r.getCategoryId();
+        boolean found = false;
+
+        for (int i = 0; i < categoryBox.getItemCount(); i++) {
+            Category item = categoryBox.getItemAt(i);
+            if (item != null && item.getId() != null && item.getId().equals(catId)) {
+                categoryBox.setSelectedIndex(i);
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            categoryBox.setSelectedIndex(0); // — Select —
+        }
     }
 
     private void clearForm() {
@@ -167,12 +218,13 @@ public class RecipeManagementFrame extends JFrame {
         descriptionArea.setText("");
         difficultyBox.setSelectedItem("EASY");
         durationSpinner.setValue(20);
+        categoryBox.setSelectedIndex(0); // — Select —
     }
 
     private void selectRecipeInListById(int id) {
         for (int i = 0; i < listModel.size(); i++) {
             Recipe r = listModel.getElementAt(i);
-            if (r.getId() == id) {
+            if (r.getId() != null && r.getId().intValue() == id) {
                 recipeList.setSelectedIndex(i);
                 recipeList.ensureIndexIsVisible(i);
                 selectedRecipe = r;
@@ -190,20 +242,27 @@ public class RecipeManagementFrame extends JFrame {
                 return;
             }
 
-
             String desc = descriptionArea.getText().trim();
             String diff = (String) difficultyBox.getSelectedItem();
             int duration = (int) durationSpinner.getValue();
+
+            Category selectedCat = (Category) categoryBox.getSelectedItem();
+            Integer categoryId = (selectedCat == null) ? null : selectedCat.getId();
+
             int idToSelect;
 
             if (selectedRecipe == null) {
                 Recipe newRecipe = new Recipe(name, desc, diff, duration);
+                newRecipe.setCategoryId(categoryId);
+
                 recipeRepo.save(newRecipe);
-                idToSelect = newRecipe.getId();
+                idToSelect = newRecipe.getId().intValue();
             } else {
                 Recipe updated = new Recipe(selectedRecipe.getId(), name, desc, diff, duration);
+                updated.setCategoryId(categoryId);
+
                 recipeRepo.update(updated);
-                idToSelect= selectedRecipe.getId();
+                idToSelect = selectedRecipe.getId();
             }
 
             loadRecipes();
@@ -223,9 +282,12 @@ public class RecipeManagementFrame extends JFrame {
                 return;
             }
 
-            int confirm = JOptionPane.showConfirmDialog(this,
-                    "Delete recipe '" + r.getName() + "'?", "Confirm delete",
-                    JOptionPane.YES_NO_OPTION);
+            int confirm = JOptionPane.showConfirmDialog(
+                    this,
+                    "Delete recipe '" + r.getName() + "'?",
+                    "Confirm delete",
+                    JOptionPane.YES_NO_OPTION
+            );
 
             if (confirm == JOptionPane.YES_OPTION) {
                 recipeRepo.deleteById(r.getId());
@@ -233,6 +295,7 @@ public class RecipeManagementFrame extends JFrame {
                 clearForm();
                 selectedRecipe = null;
                 recipeList.clearSelection();
+                updateStepsButtonState();
             }
         } catch (Exception ex) {
             showError(ex);
@@ -258,15 +321,15 @@ public class RecipeManagementFrame extends JFrame {
 
     private void updateStepsButtonState() {
         Recipe selected = recipeList.getSelectedValue();
-        boolean enabled = selected != null && selected.getId() > 0;
+        boolean enabled = selected != null && selected.getId() != null && selected.getId() > 0;
         manageStepsBtn.setEnabled(enabled);
     }
 
     private void openManageSteps() {
         try {
             Recipe r = recipeList.getSelectedValue();
-            if (r == null) {
-                JOptionPane.showMessageDialog(this, "Select a recipe first.");
+            if (r == null || r.getId() == null || r.getId() <= 0) {
+                JOptionPane.showMessageDialog(this, "Save/select a recipe first, then add steps.");
                 return;
             }
             ManageStepsFrame frame = new ManageStepsFrame(r.getId());

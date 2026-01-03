@@ -1,3 +1,14 @@
+CREATE TABLE IF NOT EXISTS category (
+                                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                        name TEXT NOT NULL UNIQUE
+);
+
+INSERT OR IGNORE INTO category(name) VALUES ('Pasta');
+INSERT OR IGNORE INTO category(name) VALUES ('Meat');
+INSERT OR IGNORE INTO category(name) VALUES ('Salads');
+INSERT OR IGNORE INTO category(name) VALUES ('Cakes');
+INSERT OR IGNORE INTO category(name) VALUES ('Soups');
+
 CREATE TABLE IF NOT EXISTS recipe (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL,

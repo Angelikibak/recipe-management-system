@@ -8,7 +8,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.stream.Collectors;
-import java.sql.Statement;
+import java.sql.SQLException;
 
 public class Database {
 
@@ -27,19 +27,25 @@ public class Database {
     public static void initialize() throws Exception {
         String schemaSql = loadResourceAsString("db/schema.sql");
 
-        // Εκτέλεση όλων των CREATE TABLE statements
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
 
-            // Split με βάση το ; ώστε να τρέξουμε κάθε statement ξεχωριστά
             for (String raw : schemaSql.split(";")) {
                 String sql = raw.trim();
                 if (!sql.isEmpty()) {
                     stmt.execute(sql);
                 }
             }
+
+            // ✅ Migration: προσθέτουμε category_id στο recipe αν δεν υπάρχει ήδη
+            try {
+                stmt.execute("ALTER TABLE recipe ADD COLUMN category_id INTEGER REFERENCES category(id)");
+            } catch (SQLException ignored) {
+                // column already exists
+            }
         }
     }
+
 
     private static String loadResourceAsString(String resourcePath) throws Exception {
         InputStream is = Database.class.getClassLoader().getResourceAsStream(resourcePath);

@@ -6,6 +6,7 @@ public class Recipe {
     private String description;
     private String difficulty; // EASY / MEDIUM / HARD
     private int totalDurationMinutes;
+    private Integer categoryId;
 
     public Recipe(Integer id, String name, String description, String difficulty, int totalDurationMinutes) {
         this.id = id;
@@ -24,8 +25,10 @@ public class Recipe {
     public String getDescription() { return description; }
     public String getDifficulty() { return difficulty; }
     public int getTotalDurationMinutes() { return totalDurationMinutes; }
+    public Integer getCategoryId() { return categoryId; }
 
     public void setId(Integer id) { this.id = id; }
+    public void setCategoryId(Integer categoryId) { this.categoryId = categoryId; }
 
     @Override
     public String toString() {
