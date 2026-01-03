@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS step (
                       title TEXT NOT NULL,
                       description TEXT,
                       duration_minutes INTEGER NOT NULL,
-                      FOREIGN KEY (recipe_id) REFERENCES recipe(id)
+                      FOREIGN KEY (recipe_id) REFERENCES recipe(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS ingredient (
@@ -28,6 +28,6 @@ CREATE TABLE IF NOT EXISTS step_ingredient (
                                  unit TEXT,
                                  note TEXT,
                                  PRIMARY KEY (step_id, ingredient_id),
-                                 FOREIGN KEY (step_id) REFERENCES step(id),
+                                 FOREIGN KEY (step_id) REFERENCES step(id) ON DELETE CASCADE,
                                  FOREIGN KEY (ingredient_id) REFERENCES ingredient(id)
 );

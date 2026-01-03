@@ -5,6 +5,8 @@ import recipes.model.Recipe;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 
 public class RecipeRepository {
 
@@ -33,28 +35,27 @@ public class RecipeRepository {
         throw new SQLException("Could not retrieve generated id for recipe");
     }
 
-    public List<Recipe> findAll() throws Exception {
+    public java.util.List<recipes.model.Recipe> findAll() throws Exception {
         String sql = "SELECT id, name, description, difficulty, total_duration_minutes FROM recipe ORDER BY id DESC";
-        List<Recipe> result = new ArrayList<>();
+        java.util.List<recipes.model.Recipe> result = new java.util.ArrayList<>();
 
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (java.sql.Connection conn = Database.getConnection();
+             java.sql.PreparedStatement ps = conn.prepareStatement(sql);
+             java.sql.ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                Recipe r = new Recipe(
+                result.add(new recipes.model.Recipe(
                         rs.getInt("id"),
                         rs.getString("name"),
                         rs.getString("description"),
                         rs.getString("difficulty"),
                         rs.getInt("total_duration_minutes")
-                );
-                result.add(r);
+                ));
             }
         }
-
         return result;
     }
+
 
     public Recipe findById(int id) throws Exception {
         String sql = "SELECT id, name, description, difficulty, total_duration_minutes FROM recipe WHERE id = ?";
@@ -78,16 +79,43 @@ public class RecipeRepository {
         return null;
     }
 
-    public boolean deleteById(int id) throws Exception {
-        String sql = "DELETE FROM recipe WHERE id = ?";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+    public void deleteById(int recipeId) throws Exception {
 
-            ps.setInt(1, id);
-            int affected = ps.executeUpdate();
-            return affected > 0;
+        String deleteStepIngredients =
+                "DELETE FROM step_ingredient WHERE step_id IN (SELECT id FROM step WHERE recipe_id = ?)";
+
+        String deleteSteps =
+                "DELETE FROM step WHERE recipe_id = ?";
+
+        String deleteRecipe =
+                "DELETE FROM recipe WHERE id = ?";
+
+        try (Connection conn = Database.getConnection()) {
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement ps1 = conn.prepareStatement(deleteStepIngredients);
+                 PreparedStatement ps2 = conn.prepareStatement(deleteSteps);
+                 PreparedStatement ps3 = conn.prepareStatement(deleteRecipe)) {
+
+                ps1.setInt(1, recipeId);
+                ps1.executeUpdate();
+
+                ps2.setInt(1, recipeId);
+                ps2.executeUpdate();
+
+                ps3.setInt(1, recipeId);
+                ps3.executeUpdate();
+
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
         }
     }
+
 
     public boolean update(Recipe recipe) throws Exception {
         if (recipe.getId() == null) {
