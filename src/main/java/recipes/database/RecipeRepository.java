@@ -12,7 +12,6 @@ public class RecipeRepository {
 
     public int save(Recipe recipe) throws Exception {
         String sql = "INSERT INTO recipe (name, description, difficulty, total_duration_minutes) VALUES (?, ?, ?, ?)";
-
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -20,7 +19,6 @@ public class RecipeRepository {
             ps.setString(2, recipe.getDescription());
             ps.setString(3, recipe.getDifficulty());
             ps.setInt(4, recipe.getTotalDurationMinutes());
-
             ps.executeUpdate();
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -30,10 +28,10 @@ public class RecipeRepository {
                     return id;
                 }
             }
+            throw new SQLException("Could not retrieve generated id for recipe");
         }
-
-        throw new SQLException("Could not retrieve generated id for recipe");
     }
+
 
     public java.util.List<recipes.model.Recipe> findAll() throws Exception {
         String sql = "SELECT id, name, description, difficulty, total_duration_minutes FROM recipe ORDER BY id DESC";

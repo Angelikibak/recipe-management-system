@@ -24,6 +24,8 @@ public class RecipeManagementFrame extends JFrame {
 
     private Recipe selectedRecipe = null;
 
+    private JButton manageStepsBtn;
+
     public RecipeManagementFrame() {
         setTitle("Recipe Management System");
         setSize(900, 500);
@@ -57,6 +59,7 @@ public class RecipeManagementFrame extends JFrame {
             if (!e.getValueIsAdjusting()) {
                 selectedRecipe = recipeList.getSelectedValue();
                 fillForm(selectedRecipe);
+                updateStepsButtonState();
             }
         });
 
@@ -109,6 +112,7 @@ public class RecipeManagementFrame extends JFrame {
             selectedRecipe = null;
             clearForm();
             recipeList.clearSelection();
+            updateStepsButtonState();
         });
 
         JButton saveBtn = new JButton("Save");
@@ -120,7 +124,8 @@ public class RecipeManagementFrame extends JFrame {
         JButton executeBtn = new JButton("Execute");
         executeBtn.addActionListener(e -> executeSelectedRecipe());
 
-        JButton manageStepsBtn = new JButton("Manage Steps");
+        manageStepsBtn = new JButton("Add/Manage Steps");
+        manageStepsBtn.setEnabled(false);
         manageStepsBtn.addActionListener(e -> openManageSteps());
 
         buttons.add(newBtn);
@@ -142,6 +147,8 @@ public class RecipeManagementFrame extends JFrame {
             listModel.clear();
             List<Recipe> recipes = recipeRepo.findAll();
             for (Recipe r : recipes) listModel.addElement(r);
+
+            updateStepsButtonState();
         } catch (Exception ex) {
             showError(ex);
         }
@@ -162,6 +169,19 @@ public class RecipeManagementFrame extends JFrame {
         durationSpinner.setValue(20);
     }
 
+    private void selectRecipeInListById(int id) {
+        for (int i = 0; i < listModel.size(); i++) {
+            Recipe r = listModel.getElementAt(i);
+            if (r.getId() == id) {
+                recipeList.setSelectedIndex(i);
+                recipeList.ensureIndexIsVisible(i);
+                selectedRecipe = r;
+                fillForm(r);
+                return;
+            }
+        }
+    }
+
     private void saveRecipe() {
         try {
             String name = nameField.getText().trim();
@@ -170,22 +190,25 @@ public class RecipeManagementFrame extends JFrame {
                 return;
             }
 
+
             String desc = descriptionArea.getText().trim();
             String diff = (String) difficultyBox.getSelectedItem();
             int duration = (int) durationSpinner.getValue();
+            int idToSelect;
 
             if (selectedRecipe == null) {
                 Recipe newRecipe = new Recipe(name, desc, diff, duration);
                 recipeRepo.save(newRecipe);
+                idToSelect = newRecipe.getId();
             } else {
                 Recipe updated = new Recipe(selectedRecipe.getId(), name, desc, diff, duration);
                 recipeRepo.update(updated);
+                idToSelect= selectedRecipe.getId();
             }
 
             loadRecipes();
-            clearForm();
-            selectedRecipe = null;
-            recipeList.clearSelection();
+            selectRecipeInListById(idToSelect);
+            updateStepsButtonState();
 
         } catch (Exception ex) {
             showError(ex);
@@ -231,6 +254,12 @@ public class RecipeManagementFrame extends JFrame {
         } catch (Exception ex) {
             showError(ex);
         }
+    }
+
+    private void updateStepsButtonState() {
+        Recipe selected = recipeList.getSelectedValue();
+        boolean enabled = selected != null && selected.getId() > 0;
+        manageStepsBtn.setEnabled(enabled);
     }
 
     private void openManageSteps() {
