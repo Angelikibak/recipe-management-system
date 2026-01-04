@@ -35,7 +35,7 @@ public class RecipeManagementFrame extends JFrame {
 
     public RecipeManagementFrame() {
         setTitle("Recipe Management System");
-        setSize(900, 520);
+        setSize(900, 700);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
