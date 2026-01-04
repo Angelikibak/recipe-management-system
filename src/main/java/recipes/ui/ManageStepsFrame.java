@@ -20,13 +20,17 @@ public class ManageStepsFrame extends JFrame {
     private final JTextArea descArea = new JTextArea(5, 20);
     private final JSpinner durationSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 999, 1));
 
+    // ✅ Step photo UI state
+    private final JLabel stepPhotoPreview = new JLabel("No photo");
+    private String selectedStepPhotoPath = null;
+
     private Step selectedStep = null;
 
     public ManageStepsFrame(int recipeId) {
         this.recipeId = recipeId;
 
         setTitle("Manage Steps (Recipe ID: " + recipeId + ")");
-        setSize(800, 450);
+        setSize(900, 520);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -76,25 +80,53 @@ public class ManageStepsFrame extends JFrame {
         c.insets = new Insets(6, 6, 6, 6);
         c.fill = GridBagConstraints.HORIZONTAL;
 
+        // Sequence
         c.gridx = 0; c.gridy = 0;
         form.add(new JLabel("Sequence Number"), c);
         c.gridx = 1;
         form.add(seqSpinner, c);
 
+        // Title
         c.gridx = 0; c.gridy++;
         form.add(new JLabel("Title"), c);
         c.gridx = 1;
         titleField.setColumns(25);
         form.add(titleField, c);
 
+        // Duration
         c.gridx = 0; c.gridy++;
         form.add(new JLabel("Duration (min)"), c);
         c.gridx = 1;
         form.add(durationSpinner, c);
 
+        // Photo
         c.gridx = 0; c.gridy++;
         c.anchor = GridBagConstraints.NORTHWEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        form.add(new JLabel("Photo"), c);
+
+        JPanel photoPanel = new JPanel(new BorderLayout(8, 8));
+
+        JButton choosePhotoBtn = new JButton("Choose Photo...");
+        choosePhotoBtn.addActionListener(e -> chooseStepPhoto());
+
+        stepPhotoPreview.setPreferredSize(new Dimension(240, 160));
+        stepPhotoPreview.setHorizontalAlignment(SwingConstants.CENTER);
+        stepPhotoPreview.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+
+        photoPanel.add(choosePhotoBtn, BorderLayout.NORTH);
+        photoPanel.add(stepPhotoPreview, BorderLayout.CENTER);
+
+        c.gridx = 1;
+        c.fill = GridBagConstraints.BOTH;
+        form.add(photoPanel, c);
+
+        // Description
+        c.gridx = 0; c.gridy++;
+        c.anchor = GridBagConstraints.NORTHWEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
         form.add(new JLabel("Description"), c);
+
         c.gridx = 1;
         c.fill = GridBagConstraints.BOTH;
 
@@ -142,10 +174,15 @@ public class ManageStepsFrame extends JFrame {
 
     private void fillForm(Step s) {
         if (s == null) return;
+
         seqSpinner.setValue(s.getSequenceNumber());
         titleField.setText(s.getTitle());
         descArea.setText(s.getDescription() == null ? "" : s.getDescription());
         durationSpinner.setValue(s.getDurationMinutes());
+
+        // ✅ Photo
+        selectedStepPhotoPath = s.getPhotoPath();
+        setPreviewImage(stepPhotoPreview, selectedStepPhotoPath);
     }
 
     private void clearForm() {
@@ -153,6 +190,9 @@ public class ManageStepsFrame extends JFrame {
         titleField.setText("");
         descArea.setText("");
         durationSpinner.setValue(1);
+
+        selectedStepPhotoPath = null;
+        setPreviewImage(stepPhotoPreview, null);
     }
 
     private void saveStep() {
@@ -169,9 +209,11 @@ public class ManageStepsFrame extends JFrame {
 
             if (selectedStep == null) {
                 Step newStep = new Step(recipeId, seq, title, desc, duration);
+                newStep.setPhotoPath(selectedStepPhotoPath);
                 stepRepo.save(newStep);
             } else {
                 Step updated = new Step(selectedStep.getId(), recipeId, seq, title, desc, duration);
+                updated.setPhotoPath(selectedStepPhotoPath);
                 stepRepo.update(updated);
             }
 
@@ -208,6 +250,31 @@ public class ManageStepsFrame extends JFrame {
         } catch (Exception ex) {
             showError(ex);
         }
+    }
+
+    private void chooseStepPhoto() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Select step photo");
+
+        int result = chooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            String path = chooser.getSelectedFile().getAbsolutePath();
+            selectedStepPhotoPath = path;
+            setPreviewImage(stepPhotoPreview, path);
+        }
+    }
+
+    private void setPreviewImage(JLabel label, String path) {
+        if (path == null || path.isBlank()) {
+            label.setIcon(null);
+            label.setText("No photo");
+            return;
+        }
+
+        ImageIcon icon = new ImageIcon(path);
+        Image img = icon.getImage().getScaledInstance(240, 160, Image.SCALE_SMOOTH);
+        label.setText("");
+        label.setIcon(new ImageIcon(img));
     }
 
     private void showError(Exception ex) {
