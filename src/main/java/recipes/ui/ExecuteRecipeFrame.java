@@ -20,7 +20,7 @@ public class ExecuteRecipeFrame extends JFrame {
         this.session = session;
 
         setTitle("Execute Recipe");
-        setSize(600, 350);
+        setSize(600, 400);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
