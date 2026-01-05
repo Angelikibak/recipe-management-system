@@ -31,11 +31,13 @@ public class RecipeManagementFrame extends JFrame {
     private String selectedRecipePhotoPath = null;
 
     private Recipe selectedRecipe = null;
+
     private JButton manageStepsBtn;
+    private JButton manageRecipeIngredientsBtn;
 
     public RecipeManagementFrame() {
         setTitle("Recipe Management System");
-        setSize(900, 700);
+        setSize(1200, 700);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -163,9 +165,9 @@ public class RecipeManagementFrame extends JFrame {
         JButton newBtn = new JButton("New");
         newBtn.addActionListener(e -> {
             selectedRecipe = null;
-            clearForm();
             recipeList.clearSelection();
-            updateStepsButtonState();
+            clearForm();               // ✅ καθαρίζει fields + photo path
+            updateStepsButtonState();  // ✅ απενεργοποιεί σωστά τα κουμπιά
         });
 
         JButton saveBtn = new JButton("Save");
@@ -181,11 +183,16 @@ public class RecipeManagementFrame extends JFrame {
         manageStepsBtn.setEnabled(false);
         manageStepsBtn.addActionListener(e -> openManageSteps());
 
+        manageRecipeIngredientsBtn = new JButton("Add/Manage Recipe Ingredients");
+        manageRecipeIngredientsBtn.setEnabled(false);
+        manageRecipeIngredientsBtn.addActionListener(e -> openManageRecipeIngredients());
+
         buttons.add(newBtn);
         buttons.add(saveBtn);
         buttons.add(deleteBtn);
         buttons.add(executeBtn);
         buttons.add(manageStepsBtn);
+        buttons.add(manageRecipeIngredientsBtn);
 
         JPanel right = new JPanel(new BorderLayout(10, 10));
         right.add(new JLabel("Recipe Details"), BorderLayout.NORTH);
@@ -255,6 +262,7 @@ public class RecipeManagementFrame extends JFrame {
         durationSpinner.setValue(20);
         categoryBox.setSelectedIndex(0);
 
+        // ✅ reset photo state (ΣΗΜΑΝΤΙΚΟ)
         selectedRecipePhotoPath = null;
         setPreviewImage(recipePhotoPreview, null);
     }
@@ -332,9 +340,9 @@ public class RecipeManagementFrame extends JFrame {
             if (confirm == JOptionPane.YES_OPTION) {
                 recipeRepo.deleteById(r.getId());
                 loadRecipes();
-                clearForm();
                 selectedRecipe = null;
                 recipeList.clearSelection();
+                clearForm();
                 updateStepsButtonState();
             }
         } catch (Exception ex) {
@@ -362,7 +370,9 @@ public class RecipeManagementFrame extends JFrame {
     private void updateStepsButtonState() {
         Recipe selected = recipeList.getSelectedValue();
         boolean enabled = selected != null && selected.getId() != null && selected.getId() > 0;
+
         manageStepsBtn.setEnabled(enabled);
+        manageRecipeIngredientsBtn.setEnabled(enabled);
     }
 
     private void openManageSteps() {
@@ -377,6 +387,17 @@ public class RecipeManagementFrame extends JFrame {
         } catch (Exception ex) {
             showError(ex);
         }
+    }
+
+    private void openManageRecipeIngredients() {
+        Recipe r = recipeList.getSelectedValue();
+        if (r == null || r.getId() == null || r.getId() <= 0) {
+            JOptionPane.showMessageDialog(this, "Save/select a recipe first, then add ingredients.");
+            return;
+        }
+
+        ManageRecipeIngredientsFrame frame = new ManageRecipeIngredientsFrame(r.getId());
+        frame.setVisible(true);
     }
 
     private void chooseRecipePhoto() {

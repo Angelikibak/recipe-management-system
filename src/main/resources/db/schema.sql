@@ -42,3 +42,14 @@ CREATE TABLE IF NOT EXISTS step_ingredient (
                                  FOREIGN KEY (step_id) REFERENCES step(id) ON DELETE CASCADE,
                                  FOREIGN KEY (ingredient_id) REFERENCES ingredient(id)
 );
+
+CREATE TABLE IF NOT EXISTS recipe_ingredient (
+                                                 recipe_id INTEGER NOT NULL,
+                                                 ingredient_id INTEGER NOT NULL,
+                                                 quantity REAL,
+                                                 unit TEXT,
+                                                 note TEXT,
+                                                 PRIMARY KEY (recipe_id, ingredient_id),
+    FOREIGN KEY (recipe_id) REFERENCES recipe(id) ON DELETE CASCADE,
+    FOREIGN KEY (ingredient_id) REFERENCES ingredient(id)
+    );

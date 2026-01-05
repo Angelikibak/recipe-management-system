@@ -24,13 +24,15 @@ public class ManageStepsFrame extends JFrame {
     private final JLabel stepPhotoPreview = new JLabel("No photo");
     private String selectedStepPhotoPath = null;
 
+    private JButton manageIngredientsBtn;
+
     private Step selectedStep = null;
 
     public ManageStepsFrame(int recipeId) {
         this.recipeId = recipeId;
 
         setTitle("Manage Steps (Recipe ID: " + recipeId + ")");
-        setSize(900, 520);
+        setSize(900, 700);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -73,6 +75,10 @@ public class ManageStepsFrame extends JFrame {
         left.add(refreshBtn, BorderLayout.SOUTH);
 
         root.add(left, BorderLayout.WEST);
+
+        manageIngredientsBtn = new JButton("Add/Manage Ingredients");
+        manageIngredientsBtn.setEnabled(false);
+        manageIngredientsBtn.addActionListener(e -> openManageIngredients());
 
         // RIGHT - Form
         JPanel form = new JPanel(new GridBagLayout());
@@ -153,6 +159,7 @@ public class ManageStepsFrame extends JFrame {
         buttons.add(newBtn);
         buttons.add(saveBtn);
         buttons.add(deleteBtn);
+        buttons.add(manageIngredientsBtn);
 
         JPanel right = new JPanel(new BorderLayout(10, 10));
         right.add(new JLabel("Step Details"), BorderLayout.NORTH);
@@ -183,6 +190,7 @@ public class ManageStepsFrame extends JFrame {
         // ✅ Photo
         selectedStepPhotoPath = s.getPhotoPath();
         setPreviewImage(stepPhotoPreview, selectedStepPhotoPath);
+        manageIngredientsBtn.setEnabled(s != null && s.getId() != null && s.getId() > 0);
     }
 
     private void clearForm() {
@@ -193,6 +201,8 @@ public class ManageStepsFrame extends JFrame {
 
         selectedStepPhotoPath = null;
         setPreviewImage(stepPhotoPreview, null);
+        if (manageIngredientsBtn != null) manageIngredientsBtn.setEnabled(false);
+
     }
 
     private void saveStep() {
@@ -275,6 +285,16 @@ public class ManageStepsFrame extends JFrame {
         Image img = icon.getImage().getScaledInstance(240, 160, Image.SCALE_SMOOTH);
         label.setText("");
         label.setIcon(new ImageIcon(img));
+    }
+
+    private void openManageIngredients() {
+        Step s = stepList.getSelectedValue();
+        if (s == null || s.getId() == null) {
+            JOptionPane.showMessageDialog(this, "Select a saved step first.");
+            return;
+        }
+        ManageStepIngredientsFrame frame = new ManageStepIngredientsFrame(s.getId());
+        frame.setVisible(true);
     }
 
     private void showError(Exception ex) {
